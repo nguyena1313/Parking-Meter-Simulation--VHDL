@@ -1,0 +1,103 @@
+----------------------------------------------------------------------------------
+-- Company: 
+-- Engineer: 
+-- 
+-- Create Date: 11/01/2017 03:03:25 PM
+-- Design Name: 
+-- Module Name: DISPLAY_DRIVER - Behavioral
+-- Project Name: 
+-- Target Devices: 
+-- Tool Versions: 
+-- Description: 
+-- 
+-- Dependencies: 
+-- 
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
+
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity DISPLAY_DRIVER is
+    PORT(
+       -- displayline : in STD_LOGIC_VECTOR(27 downto 0);
+        BTN0, BTN1, BTN2, BTN3 : in STD_LOGIC := '0';
+        CLK : in STD_LOGIC := '0';
+        an : out STD_LOGIC_VECTOR(7 downto 0) := "11111110";
+        ca: out STD_LOGIC_VECTOR(6 downto 0) := "1111111"
+    );
+end DISPLAY_DRIVER;
+
+architecture Behavioral of DISPLAY_DRIVER is
+
+component Parking_Meter is
+    PORT (
+        BTN0, BTN1, BTN2, BTN3 : in STD_LOGIC := '0';
+        CLK : in STD_LOGIC;
+        DISPLAYLINE : out STD_LOGIC_VECTOR(27 downto 0)
+    );
+end component Parking_Meter;
+
+
+signal dClock, controlClock : STD_LOGIC := '0';
+signal displayline : STD_LOGIC_VECTOR(27 downto 0);
+signal tempan: STD_LOGIC_VECTOR(3 downto 0) := "0111";
+
+begin
+    controlClock <= CLK;
+    
+    controller : parking_meter port map (BTN0 => BTN0, BTN1 => BTN1, BTn2 => BTN2, BTN3 => BTN3, CLK => controlClock, DISPLAYLINE => DISPLAYLINE);   
+    clockDivider: process(CLK, dClock) 
+    variable period : integer range 0 to 208333;
+    begin
+        if (rising_edge(CLK)) then
+            if(period = 208333) then --480Hz
+                dClock <= not dClock;
+                period := 0;
+            else
+                period := period + 1;
+            end if;
+        end if;
+    end process;
+
+    decoder: process(dClock)
+    begin        
+        if (rising_edge(dClock)) then 
+            ca <= "1111111";             
+            if (tempan(0) = '0') then
+                an(3 downto 0) <= tempan;
+                ca <= displayline(6 downto 0);  
+                tempan <= "1101";             
+            elsif(tempan(1) = '0') then 
+                an(3 downto 0) <= tempan;
+                ca <= displayline(13 downto 7);
+                tempan <= "1011";
+            elsif(tempan(2) = '0') then
+                an(3 downto 0) <= tempan;
+                ca <= displayline(20 downto 14);
+                tempan <= "0111";
+            elsif(tempan(3) = '0') then 
+                an(3 downto 0) <= tempan;
+                ca <= displayline(27 downto 21);
+                tempan <= "1110";                
+            else 
+                tempan <= "1110";
+            end if;
+            
+            
+        end if;
+    end process;
+end Behavioral;

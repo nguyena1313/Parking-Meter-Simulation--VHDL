@@ -1,0 +1,74 @@
+----------------------------------------------------------------------------------
+-- Company: 
+-- Engineer: 
+-- 
+-- Create Date: 11/01/2017 08:40:51 PM
+-- Design Name: 
+-- Module Name: single_pulser - Behavioral
+-- Project Name: 
+-- Target Devices: 
+-- Tool Versions: 
+-- Description: 
+-- 
+-- Dependencies: 
+-- 
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
+
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity single_pulser is
+    port(
+        btn : in STD_LOGIC;
+        CLK : in STD_LOGIC;
+        output : out STD_LOGIC
+    );
+end single_pulser;
+
+architecture Behavioral of single_pulser is
+signal outBuffer, flag: STD_LOGIC := '0';
+
+signal b0, b1, b2, b3, b4: STD_LOGIC;
+
+begin
+
+ output <= outBuffer;
+ 
+ b0 <= btn;
+ b1 <= b0;
+ b2 <= b1;
+ b3 <= b2;
+ b4 <= b3;
+ 
+process(CLK)
+variable state : integer range 0 to 1;
+begin
+if (rising_edge(CLK)) then
+    if (outBuffer = '0' and b4 = '1' and flag = '0') then
+        outBuffer <= '1';
+        flag <= '1';
+    else
+        outBuffer <= '0';
+    end if;
+    
+    if(b4 = '0') then
+        flag <= '0';
+    end if;
+end if;
+
+end process;
+end Behavioral;

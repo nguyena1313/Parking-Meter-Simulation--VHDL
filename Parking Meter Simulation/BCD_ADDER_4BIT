@@ -1,0 +1,90 @@
+----------------------------------------------------------------------------------
+-- Company: 
+-- Engineer: 
+-- 
+-- Create Date: 10/24/2017 11:57:05 PM
+-- Design Name: 
+-- Module Name: BCD_ADDER_4BIT - Behavioral
+-- Project Name: 
+-- Target Devices: 
+-- Tool Versions: 
+-- Description: 
+-- 
+-- Dependencies: 
+-- 
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
+
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity BCD_ADDER_4BIT is
+    PORT (
+        BCDA: IN STD_LOGIC_VECTOR(15 downto 0);
+        BCDB: IN STD_LOGIC_VECTOR(15 downto 0);
+        BCDCIN: IN STD_LOGIC;
+        
+        BCDSUM: OUT STD_LOGIC_VECTOR(15 downto 0);
+        BCDCOUT: OUT STD_LOGIC 
+    );
+end BCD_ADDER_4BIT;
+
+architecture Behavioral of BCD_ADDER_4BIT is
+alias A3: STD_LOGIC_VECTOR(3 downto 0) is BCDA(15 downto 12);
+alias A2: STD_LOGIC_VECTOR(3 downto 0) is BCDA(11 downto 8);
+alias A1: STD_LOGIC_VECTOR(3 downto 0) is BCDA(7 downto 4);
+alias A0: STD_LOGIC_VECTOR(3 downto 0) is BCDA(3 downto 0);
+
+alias B3: STD_LOGIC_VECTOR(3 downto 0) is BCDB(15 downto 12);
+alias B2: STD_LOGIC_VECTOR(3 downto 0) is BCDB(11 downto 8);
+alias B1: STD_LOGIC_VECTOR(3 downto 0) is BCDB(7 downto 4);
+alias B0: STD_LOGIC_VECTOR(3 downto 0) is BCDB(3 downto 0);
+
+alias S3: STD_LOGIC_VECTOR(3 downto 0) is BCDSUM(15 downto 12);
+alias S2: STD_LOGIC_VECTOR(3 downto 0) is BCDSUM(11 downto 8);
+alias S1: STD_LOGIC_VECTOR(3 downto 0) is BCDSUM(7 downto 4);
+alias S0: STD_LOGIC_VECTOR(3 downto 0) is BCDSUM(3 downto 0);
+
+    component BCD_ADDER is
+        port (
+          --Inputs
+            BCDA : in std_logic_vector(3 downto 0);
+            BCDB : in std_logic_vector(3 downto 0);
+            BCDCIN  : in std_logic;
+          --Outputs  
+            BCDSUM : out std_logic_vector(3 downto 0);
+            BCDCOUT : out std_logic
+          );
+    end component BCD_ADDER;
+
+signal CARRY1, CARRY2, CARRY3: STD_LOGIC;
+signal SUM0, SUM1, SUM2, SUM3 : STD_LOGIC_VECTOR (3 downto 0);
+begin
+
+ADDER1: BCD_ADDER port map (BCDA => A0, BCDB => B0, BCDCIN => BCDCIN, BCDSUM => SUM0, BCDCOUT => CARRY1);
+
+ADDER2: BCD_ADDER port map (BCDA => A1, BCDB => B1, BCDCIN => CARRY1, BCDSUM => SUM1, BCDCOUT => CARRY2);
+
+ADDER3: BCD_ADDER port map (BCDA => A2, BCDB => B2, BCDCIN => CARRY2, BCDSUM => SUM2, BCDCOUT => CARRY3);
+
+ADDER4: BCD_ADDER port map (BCDA => A3, BCDB => B3, BCDCIN => CARRY3, BCDSUM => SUM3, BCDCOUT => BCDCOUT);
+
+S0 <= SUM0;
+S1 <= SUM1;
+S2 <= SUM2;
+S3 <= SUM3;
+
+end Behavioral;

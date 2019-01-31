@@ -1,0 +1,246 @@
+----------------------------------------------------------------------------------
+-- Company: 
+-- Engineer: 
+-- 
+-- Create Date: 10/29/2017 06:27:41 PM
+-- Design Name: 
+-- Module Name: Parking_Meter - Behavioral
+-- Project Name: 
+-- Target Devices: 
+-- Tool Versions: 
+-- Description: 
+-- 
+-- Dependencies: 
+-- 
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
+
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity Parking_Meter is
+    PORT (
+        BTN0, BTN1, BTN2, BTN3 : in STD_LOGIC := '0';
+        CLK : in STD_LOGIC;
+        DISPLAYLINE : out STD_LOGIC_VECTOR(27 downto 0)
+    );
+end Parking_Meter;
+
+architecture Behavioral of Parking_Meter is
+    component BCD_ADDER_4BIT is
+        PORT (
+            BCDA: IN STD_LOGIC_VECTOR(15 downto 0);
+            BCDB: IN STD_LOGIC_VECTOR(15 downto 0);            
+            BCDCIN : IN STD_LOGIC;
+            BCDSUM: OUT STD_LOGIC_VECTOR(15 downto 0);
+            BCDCOUT: OUT STD_LOGIC
+        );
+    end component BCD_ADDER_4BIT;
+    
+    component BCD_to_SEVENSEG is
+        PORT (
+            BCDIN : in STD_LOGIC_VECTOR(3 downto 0);
+            SEVENOUT : out STD_LOGIC_VECTOR(6 downto 0)
+        );
+    end component BCD_to_SEVENSEG;
+    
+    component MUX2_1 is
+        PORT (
+        --Inputs
+            A , B : IN STD_LOGIC_VECTOR(3 DOWNTO 0);                
+            E , S : IN STD_LOGIC;
+        --Outputs
+            M_OUT : OUT STD_LOGIC_VECTOR(3 DOWNTO 0)                                            
+        );
+    END component MUX2_1;
+
+    component single_pulser is
+        port(
+            btn : in STD_LOGIC;
+            CLK : in STD_LOGIC;
+            output : out STD_LOGIC
+        );
+    end component single_pulser;
+    
+    signal counter, DIGIT: STD_LOGIC_VECTOR(15 downto 0):= x"0001";
+    signal blinker, halfBlinker, noBlinker: STD_LOGIC := '0';
+    signal buttonInput, buttonAdd, buttonAdded, decCounter, decremented : STD_LOGIC_VECTOR(15 downto 0) := x"0000";
+    signal overflow : STD_LOGIC := '0';
+        
+    alias DIGIT0 : STD_LOGIC_VECTOR(3 downto 0) is DIGIT(3 downto 0);
+    alias DIGIT1 : STD_LOGIC_VECTOR(3 downto 0) is DIGIT(7 downto 4);
+    alias DIGIT2 : STD_LOGIC_VECTOR(3 downto 0) is DIGIT(11 downto 8);
+    alias DIGIT3 : STD_LOGIC_VECTOR(3 downto 0) is DIGIT(15 downto 12);
+    
+    alias SEVEN0 : STD_LOGIC_VECTOR(6 downto 0) is DISPLAYLINE(6 downto 0);
+    alias SEVEN1 : STD_LOGIC_VECTOR(6 downto 0) is DISPLAYLINE(13 downto 7);
+    alias SEVEN2 : STD_LOGIC_VECTOR(6 downto 0) is DISPLAYLINE(20 downto 14);
+    alias SEVEN3 : STD_LOGIC_VECTOR(6 downto 0) is DISPLAYLINE(27 downto 21);
+    
+    signal oneHzCLK, twoHzCLK: STD_LOGIC := '0';
+    
+    signal State: integer range 0 to 2 := 0;
+    
+    signal b0, b1, b2, b3: STD_LOGIC := '0';
+begin
+
+buttonAdder : BCD_ADDER_4BIT port map (BCDA => counter, BCDB => buttonInput, BCDCIN => '0', BCDSUM => buttonAdd, BCDCOUT => overflow);
+decrementer : BCD_ADDER_4BIT port map (BCDA => buttonAdd, BCDB => x"9999", BCDCIN => '0', BCDSUM => decremented);
+
+display0 : BCD_to_SEVENSEG port map (BCDIN => DIGIT0, SEVENOUT => SEVEN0);
+display1 : BCD_to_SEVENSEG port map (BCDIN => DIGIT1, SEVENOUT => SEVEN1);
+display2 : BCD_to_SEVENSEG port map (BCDIN => DIGIT2, SEVENOUT => SEVEN2);
+display3 : BCD_to_SEVENSEG port map (BCDIN => DIGIT3, SEVENOUT => SEVEN3);
+
+--[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][--
+
+smooth0 : single_pulser port map (btn => BTN0, CLK => oneHZCLK, output => b0);
+smooth1 : single_pulser port map (btn => BTN1, CLK => oneHZCLK, output => b1);                                                                                                                                               
+smooth2 : single_pulser port map (btn => BTN2, CLK => oneHZCLK, output => b2);
+smooth3 : single_pulser port map (btn => BTN3, CLK => oneHZCLK, output => b3);
+
+--[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][--
+                                                                             
+oneHz : process (CLK)
+variable period1 : integer range 0 to 50000000;
+begin
+    if (rising_edge(CLK)) then
+        if (period1 = 50000000) then
+            oneHzCLK <= not oneHzCLK;
+            period1 := 0;
+        else
+            period1 := period1 + 1;
+        end if;
+    end if;
+end process;
+
+twoHz : process (CLK)
+variable period2 : integer range 0 to 25000000;
+begin
+    if (rising_edge(CLK)) then    
+        if (period2 = 25000000) then
+            twoHzCLK <= not twoHzCLK;
+            period2 := 0;
+        else
+            period2 := period2 + 1;
+        end if;
+    end if;
+end process;
+
+--[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][--
+
+decrement: process(blinker, oneHzCLK, overflow)
+begin
+    if(rising_edge(oneHzCLK)) then
+        if(buttonAdded = x"0000") then
+            counter <= x"0000";
+        elsif(overflow  = '1') then
+            counter <= x"9999";
+        else
+            counter <= decremented;
+        end if;
+    end if;
+end process;
+
+--[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][--
+
+blink : process (oneHzCLK)
+begin
+    if(rising_edge(oneHzCLK)) then
+        blinker <= not blinker;    
+    end if;
+end process;
+
+halfBlink : process (twoHzCLK)
+begin
+    if(rising_edge(twoHzCLK)) then
+        halfBlinker <= not halfBlinker;    
+    end if;
+end process;
+
+--[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][--
+
+buttons: process(b0, b1, b2, b3, CLK)
+begin
+    if(rising_edge(CLK)) then
+        if (b3 = '1') then
+            buttonInput <= x"0500";
+        elsif(b2 = '1') then
+            buttonInput <= x"0200";
+        elsif(b1 = '1') then
+            buttonInput <= x"0150";
+        elsif(b0 = '1') then
+            buttonInput <= x"0050";
+        else 
+            buttonInput <= x"0000";            
+        end if;   
+        
+        buttonAdded <= buttonAdd;               
+    end if;             
+end process;
+
+
+--[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][--
+
+stateMachine : process(CLK, halfBlinker, blinker, buttonAdded)
+begin    
+    if(rising_edge(CLK)) then        
+        DIGIT <= x"FFFF";
+        case State is
+            when 0 =>
+                if (buttonAdded = x"0000" and (halfblinker = '1')) then
+                    DIGIT <= buttonAdded;
+                    State <= 0;
+                elsif(buttonAdded > x"0000") then
+                    State <= 1;
+                elsif (buttonAdded > x"0200") then
+                    State <= 2;
+                else 
+                    State <= 0;
+                end if;
+            when 1 =>
+                if((buttonAdded > x"0000") and (buttonAdded < x"0200") and (blinker = '1')) then
+                    if (buttonAdded(0) = '1') then
+                        State <= 1;
+                    else
+                        DIGIT <= buttonAdded;
+                        State <= 1;
+                    end if;
+                elsif(buttonAdded < x"0001") then
+                    State <= 0;
+                elsif(buttonAdded > x"0200") then 
+                    State <= 2;
+                else 
+                    State <= 1;
+                end if;
+            when 2 =>
+                if((buttonAdded > x"0199")) then
+                    DIGIT <= buttonAdded;
+                    State <= 2;
+                elsif(buttonAdded < x"0001") then
+                    State <= 0;
+                elsif(buttonAdded < x"0200") then
+                    State <= 1;
+                else 
+                    State <= 2;
+                end if;
+        end case;
+    end if;
+end process;
+
+
+
+end Behavioral;

@@ -1,0 +1,65 @@
+----------------------------------------------------------------------------------
+-- Company: 
+-- Engineer: 
+-- 
+-- Create Date: 09/11/2017 07:24:38 PM
+-- Design Name: 
+-- Module Name: FULLADDER_4BITS - Behavioral
+-- Project Name: 
+-- Target Devices: 
+-- Tool Versions: 
+-- Description: 
+-- 
+-- Dependencies: 
+-- 
+-- Revision:
+-- Revision 0.01 - File Created
+-- Additional Comments:
+-- 
+----------------------------------------------------------------------------------
+
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+-- Uncomment the following library declaration if using
+-- arithmetic functions with Signed or Unsigned values
+--use IEEE.NUMERIC_STD.ALL;
+
+-- Uncomment the following library declaration if instantiating
+-- any Xilinx leaf cells in this code.
+--library UNISIM;
+--use UNISIM.VComponents.all;
+
+entity FULLADDER_4BITS is
+    Port ( A : in STD_LOGIC_VECTOR(3 DOWNTO 0);
+           B : in STD_LOGIC_VECTOR(3 DOWNTO 0);
+           Cin : in STD_LOGIC;
+           S : out STD_LOGIC_VECTOR(3 DOWNTO 0);
+           Cout : out STD_LOGIC     
+           );
+end FULLADDER_4BITS;
+
+architecture Behavioral of FULLADDER_4BITS is
+
+component ADDER
+    Port ( A : in STD_LOGIC;
+           B : in STD_LOGIC;
+           Cin : in STD_LOGIC;
+           S : out STD_LOGIC;
+           Cout : out STD_LOGIC
+          );
+end component;
+
+signal Wire1:std_logic;
+signal Wire2:std_logic;
+signal Wire3:std_logic;
+
+begin
+
+instant1: ADDER port map(A=>A(0),B=>B(0),Cin=>Cin,S=>S(0),Cout=>Wire1);
+instant2: ADDER port map(A=>A(1),B=>B(1),Cin=>Wire1,S=>S(1),Cout=>Wire2);
+instant3: ADDER port map(A=>A(2),B=>B(2),Cin=>Wire2,S=>S(2),Cout=>Wire3);
+instant4: ADDER port map(A=>A(3),B=>B(3),Cin=>Wire3,S=>S(3),Cout=>Cout);
+
+end Behavioral;
